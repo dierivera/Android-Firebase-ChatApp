@@ -2,12 +2,15 @@ package com.dierivera.ubp.chatapp.chatapp;
 
 import android.content.Intent;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.RemoteInput;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,14 +31,16 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseListAdapter<ChatMessage> adapter;
 
+    private static final String TAG = "Firebase_MSG";
+
     private static final int SIGN_IN_REQUEST_CODE = 1;
+    public static final String EXTRA_VOICE_REPLY = "extra_voice_reply";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setupUI();
-
         if(FirebaseAuth.getInstance().getCurrentUser() == null) {
             // Start sign in/sign up activity
             startActivityForResult(
@@ -43,17 +48,13 @@ public class MainActivity extends AppCompatActivity {
                             .createSignInIntentBuilder()
                             .build(), SIGN_IN_REQUEST_CODE);
         } else {
-            // User is already signed in. Therefore, display
-            // a welcome Toast
-            Toast.makeText(this,
-                    "Welcome " + FirebaseAuth.getInstance()
-                            .getCurrentUser()
-                            .getDisplayName(),
-                    Toast.LENGTH_LONG)
-                    .show();
-
-            // Load chat room contents
+            PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putString("user", FirebaseAuth.getInstance().getCurrentUser().getDisplayName()).apply();
             displayChatMessages();
+        }
+        try {
+            startService(new Intent(this, FirebaseBackgroundService.class));
+        }catch (Exception e){
+            Log.i(TAG, "error starting service: " + e.toString());
         }
     }
 
@@ -79,7 +80,27 @@ public class MainActivity extends AppCompatActivity {
                 input.setText("");
             }
         });
+
+        if (null != getIntent()) {
+            Bundle remoteInput = RemoteInput.getResultsFromIntent(getIntent());
+
+            if (null != remoteInput) {
+                Log.i(TAG, "response: " + remoteInput.getCharSequence(EXTRA_VOICE_REPLY));
+                //Set the response as the text to be sent
+                //EditText message = (EditText) findViewById(R.id.input);
+                //message.setText(remoteInput.getCharSequence(EXTRA_VOICE_REPLY));
+                FirebaseDatabase.getInstance()
+                        .getReference()
+                        .push()
+                        .setValue(new ChatMessage(remoteInput.getCharSequence(EXTRA_VOICE_REPLY).toString(),
+                                FirebaseAuth.getInstance()
+                                        .getCurrentUser()
+                                        .getDisplayName())
+                        );
+            }
+        }
     }
+
 
     private void displayChatMessages() {
         ListView listOfMessages = (ListView)findViewById(R.id.list_of_messages);
@@ -106,6 +127,8 @@ public class MainActivity extends AppCompatActivity {
 
         listOfMessages.setAdapter(adapter);
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

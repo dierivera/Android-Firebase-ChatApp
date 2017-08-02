@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">ChatApp</string>
+    <string-array name="reply_choices">
+        <item>Okay</item>
+        <item>Llamame</item>
+        <item>No puedo hablar</item>
+    </string-array>
 </resources>
