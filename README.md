@@ -1,5 +1,6 @@
 # Android-Firebase-ChatApp
 Chat App developed on android storing the messages in firebase (with authentication). This App sends notifications that extend to wearables. Also, you can respond from your own smartwatch with predetermined answers (in the strings file you can change them) or use the voice action when available.  
+To check the notifications you need at least two installations of the app, one to send the message, the other to receive the notification (obviously if you send a message you won't be notified).   
 
 Here are all the guides I used for this project:  
   
